@@ -1,6 +1,12 @@
+import logging
 from fastapi import FastAPI
 
 from app.api.routes.ingestion import router as ingestion_router
+from app.core.logging import configure_logging
+
+configure_logging()
+
+logger = logging.getLogger(__name__)
 
 
 app = FastAPI(

@@ -2,6 +2,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from fastapi import UploadFile
+from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
 from app.ingestion.pipeline import FinancialIngestionPipeline
@@ -13,17 +14,27 @@ class DocumentService:
 
         settings = get_settings()
 
-        self.upload_dir = Path(settings.upload_dir)
-        self.pipeline = FinancialIngestionPipeline()
+        self.upload_dir = Path(
+            settings.upload_dir
+        )
 
-    async def process_upload(
+        self.pipeline = (
+            FinancialIngestionPipeline()
+        )
+
+    def process_upload(
         self,
         file: UploadFile,
+        company: str,
+        fiscal_year: int,
+        db: Session,
     ) -> dict:
 
         document_id = uuid4().hex
 
-        extension = Path(file.filename or "").suffix.lower()
+        extension = Path(
+            file.filename or ""
+        ).suffix.lower()
 
         file_path = (
             self.upload_dir
@@ -39,18 +50,19 @@ class DocumentService:
 
             with file_path.open("wb") as buffer:
 
-                while chunk := await file.read(
+                while chunk := file.file.read(
                     1024 * 1024
                 ):
                     buffer.write(chunk)
 
-            result = await self.pipeline.run(
+            return self.pipeline.run(
                 file_path=str(file_path),
                 document_id=document_id,
                 filename=file.filename or "unknown",
+                company=company,
+                fiscal_year=fiscal_year,
+                db=db,
             )
 
-            return result
-
         finally:
-            await file.close()
+            file.file.close()
