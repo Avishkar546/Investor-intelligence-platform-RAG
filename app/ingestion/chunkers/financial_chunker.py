@@ -26,6 +26,8 @@ class FinancialChunker:
         pages: list[DocumentPage],
         document_id: str,
         filename: str,
+        company:str,
+        fiscal_year:str
     ) -> list[DocumentChunk]:
 
         chunks: list[DocumentChunk] = []
@@ -57,6 +59,8 @@ class FinancialChunker:
                                     filename,
                                     page.page_number,
                                     current_section,
+                                    company,
+                                    fiscal_year
                                 )
                             )
 
@@ -79,6 +83,8 @@ class FinancialChunker:
                             filename,
                             page.page_number,
                             current_section,
+                            company,
+                            fiscal_year
                         )
                     )
 
@@ -166,6 +172,8 @@ class FinancialChunker:
         filename: str,
         page_number: int,
         section: str,
+        company: str,
+        fiscal_year: str
     ) -> DocumentChunk:
 
         return DocumentChunk(
@@ -176,6 +184,8 @@ class FinancialChunker:
                 "filename": filename,
                 "page": page_number,
                 "section": section,
+                "company":company,
+                "fiscal_year":fiscal_year,
                 "document_type": "financial_annual_report",
             },
         )

@@ -59,6 +59,8 @@ class FinancialIngestionPipeline:
             pages=pages,
             document_id=document_id,
             filename=filename,
+            company=company,
+            fiscal_year=fiscal_year
         )
 
         if not chunks:

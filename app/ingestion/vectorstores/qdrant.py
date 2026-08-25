@@ -3,6 +3,7 @@ from qdrant_client.models import (
     Distance,
     PointStruct,
     VectorParams,
+    PayloadSchemaType
 )
 
 from app.core.config import get_settings
@@ -68,4 +69,26 @@ class QdrantVectorStore:
         self.client.upsert(
             collection_name=self.collection,
             points=points,
+        )
+
+    def create_payload_indexes(
+        self,
+    ) -> None:
+
+        self.client.create_payload_index(
+            collection_name=self.collection,
+            field_name="company",
+            field_schema=PayloadSchemaType.KEYWORD,
+        )
+
+        self.client.create_payload_index(
+            collection_name=self.collection,
+            field_name="fiscal_year",
+            field_schema=PayloadSchemaType.INTEGER,
+        )
+
+        self.client.create_payload_index(
+            collection_name=self.collection,
+            field_name="document_id",
+            field_schema=PayloadSchemaType.KEYWORD,
         )

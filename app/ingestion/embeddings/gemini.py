@@ -73,23 +73,29 @@ class GeminiEmbeddingService:
         self,
         query: str,
     ) -> list[float]:
-
-        response = self.client.models.embed_content(
-            model=self.model,
-            contents=types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_text(text=query)
-                ],
-            ),
-            config=types.EmbedContentConfig(
-                task_type="RETRIEVAL_QUERY",
-            ),
-        )
-
-        if not response.embeddings:
-            raise RuntimeError(
-                "Gemini returned no query embedding."
+        
+        try:
+            response = self.client.models.embed_content(
+                model=self.model,
+                contents=types.Content(
+                    role="user",
+                    parts=[
+                        types.Part.from_text(text=query)
+                    ],
+                ),
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_QUERY",
+                ),
             )
 
-        return response.embeddings[0].values
+            if not response.embeddings:
+                raise RuntimeError(
+                    "Gemini returned no query embedding."
+                )
+
+            return response.embeddings[0].values
+        except Exception as exc:
+
+            raise RuntimeError(
+                f"Failed to generate query embedding: {exc}"
+            ) from exc
