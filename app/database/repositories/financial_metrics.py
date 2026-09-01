@@ -6,10 +6,66 @@ from app.rag.kpi_extractor import FinancialMetricsResult
 
 
 class FinancialMetricsRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get_by_company_and_year(
+        self,
+        company: str,
+        fiscal_year: int,
+    ) -> FinancialMetrics | None:
+
+        statement = (
+            select(FinancialMetrics)
+            .where(
+                FinancialMetrics.company == company,
+                FinancialMetrics.fiscal_year
+                == fiscal_year,
+            )
+        )
+
+        return self.db.execute(
+            statement
+        ).scalar_one_or_none()
+
+    def get_by_company(
+        self,
+        company: str,
+    ) -> list[FinancialMetrics]:
+
+        statement = (
+            select(FinancialMetrics)
+            .where(
+                FinancialMetrics.company == company
+            )
+            .order_by(
+                FinancialMetrics.fiscal_year
+            )
+        )
+
+        return list(
+            self.db.execute(statement).scalars()
+        )
+
+    def get_by_document(
+        self,
+        document_id: str,
+    ) -> FinancialMetrics | None:
+
+        statement = (
+            select(FinancialMetrics)
+            .where(
+                FinancialMetrics.document_id
+                == document_id
+            )
+        )
+
+        return self.db.execute(
+            statement
+        ).scalar_one_or_none()
 
     def upsert(
         self,
-        db: Session,
         *,
         document_id: str,
         company: str,
@@ -22,7 +78,7 @@ class FinancialMetricsRepository:
             FinancialMetrics.fiscal_year == fiscal_year,
         )
 
-        record = db.scalar(statement)
+        record = self.db.scalar(statement)
 
         if record is None:
 
@@ -32,7 +88,7 @@ class FinancialMetricsRepository:
                 fiscal_year=fiscal_year,
             )
 
-            db.add(record)
+            self.db.add(record)
 
         record.document_id = document_id
         record.revenue = metrics.revenue
@@ -54,7 +110,7 @@ class FinancialMetricsRepository:
             else None
         )
 
-        db.commit()
-        db.refresh(record)
+        self.db.commit()
+        self.db.refresh(record)
 
         return record

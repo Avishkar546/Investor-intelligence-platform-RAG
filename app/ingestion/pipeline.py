@@ -32,9 +32,7 @@ class FinancialIngestionPipeline:
         self.kpi_extractor = (
             FinancialKPIExtractor()
         )
-        self.metrics_repository = (
-            FinancialMetricsRepository()
-        )
+        self.metrics_repository = None
 
     def run(
         self,
@@ -45,6 +43,10 @@ class FinancialIngestionPipeline:
         fiscal_year: int,
         db: Session,
     ) -> dict:
+
+        self.metrics_repository = (
+            FinancialMetricsRepository(db)
+        )
 
         # 1. Extract
         pages = self.loader.load(file_path)
@@ -116,7 +118,6 @@ class FinancialIngestionPipeline:
             )
 
         self.metrics_repository.upsert(
-            db=db,
             document_id=document_id,
             company=company,
             fiscal_year=fiscal_year,
