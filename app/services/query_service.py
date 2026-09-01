@@ -1,30 +1,40 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.query.models import QueryType
 from app.query.router import FinancialQueryRouter
+from app.rag.answer_generator import AnswerGenerator
+from app.rag.citation import CitationBuilder
+from app.rag.context_builder import ContextBuilder
 from app.retrieval.query import RetrievalQuery
-from app.retrieval.retriever import (
-    FinancialRetriever,
-)
-from app.services.metric_service import (
-    MetricsService,
-)
+from app.retrieval.retriever import FinancialRetriever
+from app.schemas.answer import AnswerResponse
+from app.services.financial_calculator import FinancialCalculator
+from app.services.metric_service import MetricsService
+from app.retrieval.post_processor import RetrievalPostProcessor
+from app.retrieval.reranker import RetrievalReranker
+from app.rag.grounding import GroundingValidator
+
+
+logger = logging.getLogger(__name__)
 
 
 class QueryService:
 
-    def __init__(
-        self,
-        db: Session,
-    ):
+    def __init__(self, db: Session):
 
         self.router = FinancialQueryRouter()
 
         self.retriever = FinancialRetriever()
 
-        self.metrics_service = MetricsService(
-            db
-        )
+        self.metrics_service = MetricsService(db)
+
+        self.calculator = FinancialCalculator()
+
+        self.context_builder = ContextBuilder()
+
+        self.answer_generator = AnswerGenerator()
 
     def process(
         self,
@@ -34,73 +44,106 @@ class QueryService:
         fiscal_year: int | None = None,
         document_id: str | None = None,
         top_k: int = 5,
-    ):
+    ) -> AnswerResponse:
 
-        query_type = self.router.route(
-            question
+        logger.info(
+            "[QUERY] Processing query | "
+            "company=%s | fiscal_year=%s | "
+            "document_id=%s",
+            company,
+            fiscal_year,
+            document_id,
         )
 
-        result = {
-            "query": question,
-            "query_type": query_type,
-        }
+        # 1. Classify query
+        query_type = self.router.route(question)
 
-        if query_type == QueryType.STRUCTURED:
+        logger.info(
+            "[QUERY] Classified as: %s",
+            query_type,
+        )
 
-            result["metrics"] = (
-                self._get_metrics(
-                    company=company,
-                    fiscal_year=fiscal_year,
-                )
+        metrics = None
+        chunks = []
+        calculations = {}
+
+        # 2. Retrieve required data
+        if query_type in (
+            QueryType.STRUCTURED,
+            QueryType.COMPARISON,
+            QueryType.HYBRID,
+        ):
+
+            metrics = self._get_metrics(
+                company=company,
+                fiscal_year=fiscal_year,
             )
 
-        elif query_type == QueryType.SEMANTIC:
+        if query_type in (
+            QueryType.SEMANTIC,
+            QueryType.HYBRID,
+        ):
 
-            result["chunks"] = (
-                self._retrieve_chunks(
-                    question=question,
-                    company=company,
-                    fiscal_year=fiscal_year,
-                    document_id=document_id,
-                    top_k=top_k,
-                )
+            chunks = self._retrieve_chunks(
+                question=question,
+                company=company,
+                fiscal_year=fiscal_year,
+                document_id=document_id,
+                top_k=top_k,
             )
 
-        elif query_type == QueryType.COMPARISON:
+        # 3. Deterministic calculations
+        if query_type == QueryType.COMPARISON:
 
-            result["metrics"] = (
-                self._get_metrics(
-                    company=company,
-                    fiscal_year=fiscal_year,
-                )
+            calculations = self._calculate_metrics(
+                metrics
             )
 
-            result["note"] = (
-                "Comparison calculation will be "
-                "implemented in the next iteration."
+        # 4. Build LLM context
+        context = self.context_builder.build(
+            metrics=metrics,
+            chunks=chunks,
+            calculations=calculations,
+        )
+
+        if not context.strip():
+
+            logger.warning(
+                "[QUERY] No context found"
             )
 
-        elif query_type == QueryType.HYBRID:
-
-            result["metrics"] = (
-                self._get_metrics(
-                    company=company,
-                    fiscal_year=fiscal_year,
-                )
+            answer = (
+                "I don't have sufficient financial "
+                "data to answer this question."
             )
 
-            result["chunks"] = (
-                self._retrieve_chunks(
-                    question=question,
-                    company=company,
-                    fiscal_year=fiscal_year,
-                    document_id=document_id,
-                    top_k=top_k,
-                )
+        else:
+
+            # 5. Generate grounded answer
+            answer = self.answer_generator.generate(
+                question=question,
+                context=context,
             )
 
-        return result
+        # 6. Build citations
+        sources = CitationBuilder.build(chunks)
 
+        logger.info(
+            "[QUERY] Completed | type=%s | "
+            "chunks=%d | sources=%d",
+            query_type,
+            len(chunks),
+            len(sources),
+        )
+
+        return AnswerResponse(
+            question=question,
+            query_type=query_type,
+            answer=answer,
+            sources=sources,
+        )
+
+    # PostgreSQL
     def _get_metrics(
         self,
         *,
@@ -109,7 +152,13 @@ class QueryService:
     ):
 
         if not company:
-            return []
+
+            logger.warning(
+                "[QUERY] Company not provided "
+                "for structured query"
+            )
+
+            return None
 
         if fiscal_year:
 
@@ -128,6 +177,7 @@ class QueryService:
             )
         )
 
+    # Qdrant
     def _retrieve_chunks(
         self,
         *,
@@ -149,3 +199,21 @@ class QueryService:
         return self.retriever.retrieve(
             retrieval_query
         )
+
+    # Financial calculations
+    def _calculate_metrics(
+        self,
+        metrics,
+    ) -> dict:
+
+        if not metrics:
+
+            return {}
+
+        # Phase 4 keeps this intentionally simple.
+        # Multi-year comparison logic will be expanded
+        # once the metric schema is normalized.
+
+        return {
+            "available_metrics": metrics
+        }
