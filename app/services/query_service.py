@@ -36,6 +36,12 @@ class QueryService:
 
         self.answer_generator = AnswerGenerator()
 
+        self.post_processor = RetrievalPostProcessor()
+
+        self.reranker = RetrievalReranker()
+
+        self.grounding_validator = GroundingValidator()
+
     def process(
         self,
         *,
@@ -92,6 +98,15 @@ class QueryService:
                 top_k=top_k,
             )
 
+            chunks = self.post_processor.process(
+                chunks,
+            )
+
+            chunks = self.reranker.rerank(
+                question,
+                chunks,
+            )
+
         # 3. Deterministic calculations
         if query_type == QueryType.COMPARISON:
 
@@ -124,6 +139,25 @@ class QueryService:
                 question=question,
                 context=context,
             )
+
+            is_grounded = (
+                self.grounding_validator.validate(
+                    answer=answer,
+                    context=context,
+                )
+            )
+
+            if not is_grounded:
+
+                logger.warning(
+                    "[QUERY] Answer failed grounding check"
+                )
+
+                answer = (
+                    "I could not generate a sufficiently "
+                    "grounded answer from the available "
+                    "financial data."
+                )
 
         # 6. Build citations
         sources = CitationBuilder.build(chunks)
