@@ -9,6 +9,12 @@ class FinancialMetricsRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def get_all(self) -> list[FinancialMetrics]:
+        statement = select(FinancialMetrics).order_by(
+            FinancialMetrics.company, FinancialMetrics.fiscal_year
+        )
+        return list(self.db.execute(statement).scalars())
+
     def get_by_company_and_year(
         self,
         company: str,

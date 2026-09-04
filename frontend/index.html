@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Investor Intelligence</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="app-shell">
+
+        <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+        <aside class="sidebar">
+
+            <div class="brand">
+
+                <div class="brand-mark">
+                    IA
+                </div>
+
+                <div>
+                    <div class="brand-name">
+                        Investor AI
+                    </div>
+
+                    <div class="brand-subtitle">
+                        Intelligence Platform
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- Upload -->
+
+            <section class="sidebar-section">
+
+                <div class="section-label">
+                    DATA INGESTION
+                </div>
+
+                <div id="dropzone" class="dropzone">
+
+                    <div class="upload-icon">
+                        ↑
+                    </div>
+
+                    <strong>
+                        Upload Annual Report
+                    </strong>
+
+                    <span>
+                        PDF files up to 50 MB
+                    </span>
+
+                    <input id="fileInput" type="file" accept=".pdf,application/pdf" hidden>
+
+                </div>
+
+
+                <div class="upload-form">
+
+                    <div class="field">
+
+                        <label for="companyInput">
+                            Company
+                        </label>
+
+                        <input id="companyInput" type="text" placeholder="e.g. Apple" autocomplete="off">
+
+                    </div>
+
+
+                    <div class="field">
+
+                        <label for="yearInput">
+                            Fiscal Year
+                        </label>
+
+                        <input id="yearInput" type="number" min="1900" max="2100" placeholder="2025">
+
+                    </div>
+
+
+                    <button id="uploadButton" class="primary-button" type="button">
+                        Process Report
+                    </button>
+
+                </div>
+
+
+                <div id="uploadProgress" class="progress-wrapper hidden">
+
+                    <div class="progress-header">
+
+                        <span id="progressStatus">
+                            Processing...
+                        </span>
+
+                        <span id="progressPercent">
+                            0%
+                        </span>
+
+                    </div>
+
+                    <div class="progress-track">
+
+                        <div id="progressFill" class="progress-fill"></div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+
+            <!-- System -->
+
+            <section class="sidebar-footer">
+
+                <div class="section-label">
+                    SYSTEM
+                </div>
+
+                <div class="system-status">
+
+                    <span class="status-dot"></span>
+
+                    <span>
+                        Backend operational
+                    </span>
+
+                </div>
+
+                <div class="system-stack">
+                    FastAPI · PostgreSQL · Qdrant
+                </div>
+
+            </section>
+
+        </aside>
+
+
+        <!-- =====================================================
+         MAIN DASHBOARD
+    ====================================================== -->
+
+        <main class="main-content">
+
+            <header class="page-header">
+
+                <div>
+
+                    <div class="eyebrow">
+                        INVESTOR INTELLIGENCE
+                    </div>
+
+                    <h1>
+                        Financial Overview
+                    </h1>
+
+                    <p>
+                        Analyze financial performance across
+                        your company's annual reports.
+                    </p>
+
+                </div>
+
+
+                <div class="header-status">
+
+                    <span class="status-dot"></span>
+
+                    Live
+
+                </div>
+
+            </header>
+
+
+            <!-- =================================================
+             SUMMARY METRICS
+        ================================================== -->
+
+            <section class="summary-grid">
+
+                <div class="summary-card">
+
+                    <span class="summary-label">
+                        Companies
+                    </span>
+
+                    <strong id="totalCompanies">
+                        0
+                    </strong>
+
+                    <span class="summary-description">
+                        Companies analyzed
+                    </span>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <span class="summary-label">
+                        Reports
+                    </span>
+
+                    <strong id="totalReports">
+                        0
+                    </strong>
+
+                    <span class="summary-description">
+                        Annual reports processed
+                    </span>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <span class="summary-label">
+                        Latest Fiscal Year
+                    </span>
+
+                    <strong id="latestYear">
+                        —
+                    </strong>
+
+                    <span class="summary-description">
+                        Most recent report
+                    </span>
+
+                </div>
+
+
+                <div class="summary-card">
+
+                    <span class="summary-label">
+                        Data Status
+                    </span>
+
+                    <strong class="status-text">
+                        Ready
+                    </strong>
+
+                    <span class="summary-description">
+                        Retrieval system online
+                    </span>
+
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+             COMPANIES
+        ================================================== -->
+
+            <section class="section-block">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>
+                            Companies
+                        </h2>
+
+                        <p>
+                            Select a company to inspect its financials.
+                        </p>
+
+                    </div>
+
+                    <span id="companyCounter" class="counter">
+                        0
+                    </span>
+
+                </div>
+
+
+                <div id="companyGrid" class="company-grid">
+                    <!-- Rendered dynamically -->
+                </div>
+
+            </section>
+
+
+            <!-- =================================================
+             SELECTED COMPANY
+        ================================================== -->
+
+            <section class="section-block">
+
+                <div class="selected-company">
+
+                    <div>
+
+                        <span class="eyebrow">
+                            SELECTED COMPANY
+                        </span>
+
+                        <h2 id="selectedCompany">
+                            No company selected
+                        </h2>
+
+                        <p id="selectedCompanyYear">
+                            Select a company above
+                        </p>
+
+                    </div>
+
+                    <div class="selected-badge">
+                        Financial Snapshot
+                    </div>
+
+                </div>
+
+
+                <div id="metricGrid" class="metric-grid">
+
+                    <div class="metric-card">
+                        <span>Revenue</span>
+                        <strong id="metricRevenue">—</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>Net Income</span>
+                        <strong id="metricNetIncome">—</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>Operating Income</span>
+                        <strong id="metricOperatingIncome">—</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>Operating Cash Flow</span>
+                        <strong id="metricCashFlow">—</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>Total Assets</span>
+                        <strong id="metricAssets">—</strong>
+                    </div>
+
+                    <div class="metric-card">
+                        <span>Total Liabilities</span>
+                        <strong id="metricLiabilities">—</strong>
+                    </div>
+
+                </div>
+
+            </section>
+
+        </main>
+
+
+        <!-- =====================================================
+         AI ANALYST
+    ====================================================== -->
+
+        <aside class="chat-panel">
+
+            <header class="chat-header">
+
+                <div class="chat-brand">
+
+                    <div class="chat-mark">
+                        ✦
+                    </div>
+
+                    <div>
+
+                        <strong>
+                            AI Financial Analyst
+                        </strong>
+
+                        <span>
+                            Ask questions about your reports
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </header>
+
+
+            <!-- Context -->
+
+            <div class="chat-context">
+
+                <div class="field">
+
+                    <label>
+                        Company
+                    </label>
+
+                    <input id="chatCompany" type="text" placeholder="Optional">
+
+                </div>
+
+                <div class="field">
+
+                    <label>
+                        Year
+                    </label>
+
+                    <input id="chatYear" type="number" placeholder="Optional">
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+             CHAT SCROLL AREA
+        ================================================== -->
+
+            <div id="chatMessages" class="chat-messages">
+
+                <div class="welcome">
+
+                    <div class="welcome-mark">
+                        ✦
+                    </div>
+
+                    <h3>
+                        Ask your financial analyst
+                    </h3>
+
+                    <p>
+                        Ask about revenue, profitability,
+                        cash flow, risks, growth or compare
+                        companies.
+                    </p>
+
+                    <div class="suggestions">
+
+                        <button data-query="What was the revenue?">
+                            What was the revenue?
+                        </button>
+
+                        <button data-query="What are the major risks?">
+                            Major risks?
+                        </button>
+
+                        <button data-query="How is profitability?">
+                            Profitability?
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Input -->
+
+            <footer class="chat-input-area">
+
+                <div class="query-meta">
+
+                    <span>
+                        AI Query
+                    </span>
+
+                    <span id="queryType">
+                        —
+                    </span>
+
+                </div>
+
+
+                <div class="chat-input-row">
+
+                    <textarea id="chatInput" rows="1" maxlength="4000"
+                        placeholder="Ask a financial question..."></textarea>
+
+                    <button id="sendButton" class="send-button" type="button" aria-label="Send">
+                        ↑
+                    </button>
+
+                </div>
+
+                <div class="input-hint">
+                    Enter to send · Shift + Enter for new line
+                </div>
+
+            </footer>
+
+        </aside>
+
+    </div>
+
+
+    <!-- =========================================================
+     TOAST
+========================================================= -->
+
+    <div id="toastContainer" class="toast-container"></div>
+
+
+    <script type="module" src="./js/main.js"></script>
+
+</body>
+
+</html>

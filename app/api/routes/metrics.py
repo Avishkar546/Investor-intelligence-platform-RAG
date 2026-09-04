@@ -11,6 +11,14 @@ router = APIRouter(
 )
 
 
+@router.get("")
+def get_all_metrics(
+    db: Session = Depends(get_db),
+):
+    service = MetricsService(db)
+    return service.get_all_metrics()
+
+
 @router.get("/{company}/{fiscal_year}")
 def get_metrics(
     company: str,

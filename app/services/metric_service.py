@@ -17,6 +17,13 @@ class MetricsService:
             FinancialMetricsRepository(db)
         )
 
+    def get_all_metrics(self) -> list[FinancialMetricResponse]:
+        metrics = self.repository.get_all()
+        return [
+            FinancialMetricResponse.model_validate(metric)
+            for metric in metrics
+        ]
+
     def get_company_year_metrics(
         self,
         company: str,
