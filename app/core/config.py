@@ -8,12 +8,16 @@ class Settings(BaseSettings):
 
     qdrant_url: str = "http://localhost:6333"
     qdrant_api_key: str | None = None
-
     qdrant_collection: str = "financial_documents"
+
+    postgres_url: str = (
+        "postgresql+psycopg://""postgres:postgres@localhost:5432/financial_rag"
+    )
 
     upload_dir: str = "uploads/raw_pdfs"
 
     embedding_model: str = "gemini-embedding-001"
+    extraction_model: str = "gemini-2.5-flash"
 
     chunk_size: int = 1200
     chunk_overlap: int = 150

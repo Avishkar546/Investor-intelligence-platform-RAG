@@ -5,13 +5,22 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "alembic>=1.19.1",
     "fastapi>=0.141.1",
     "google-genai>=2.18.1",
+    "psycopg[binary]>=3.3.4",
     "pydantic-settings>=2.15.0",
     "pymupdf>=1.28.2",
     "pymupdf4llm>=1.28.2",
     "python-dotenv>=1.2.3",
     "python-multipart>=0.0.32",
     "qdrant-client>=1.19.0",
+    "sqlalchemy>=2.0.52",
     "uvicorn>=0.52.4",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+    "pytest>=9.1.1",
 ]
